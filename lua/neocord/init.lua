@@ -342,37 +342,66 @@ function neocord:get_project_name(file_path)
     return nil
   end
 
-  -- Escape quotes in the file path
   file_path = file_path:gsub([["]], [[\"]])
 
-  -- TODO: Only checks for a git repository, could add more checks here
-  -- Might want to run this in a background process depending on performance
-  local project_path_cmd = "git rev-parse --show-toplevel"
+  local git_project_path_cmd_base = "git rev-parse --show-toplevel"
+  local git_project_path_cmd
   if self.os.name == "windows" then
-    project_path_cmd = string.format([[cmd /c "cd "%s" && %s"]], file_path, project_path_cmd)
+    git_project_path_cmd = string.format([[cmd /c "cd "%s" && %s"]], file_path, git_project_path_cmd_base)
   else
-    project_path_cmd = string.format([[bash -c 'cd "%s" && %s']], file_path, project_path_cmd)
+    git_project_path_cmd = string.format([[bash -c 'cd "%s" && %s']], file_path, git_project_path_cmd_base)
   end
 
-  local project_path = vim.fn.system(project_path_cmd)
+  local project_path = vim.fn.system(git_project_path_cmd)
   project_path = vim.trim(project_path)
 
+  local is_git_repo = false
   if project_path:find("fatal.*") then
-    self.log:info("Not a git repository, skipping...")
-    return nil
-  end
-  if vim.v.shell_error ~= 0 or #project_path == 0 then
-    local message_fmt = "Failed to get project name (error code %d): %s"
+    self.log:info("Not a git repository.")
+  elseif vim.v.shell_error ~= 0 or #project_path == 0 then
+    local message_fmt = "Failed to get Git project name (error code %d): %s"
     self.log:debug(string.format(message_fmt, vim.v.shell_error, project_path))
-    return nil
+  else
+    is_git_repo = true
   end
 
-  -- Since git always uses forward slashes, replace with backslash in Windows
+  if is_git_repo then
+    if self.os.name == "windows" then
+      project_path = project_path:gsub("/", [[\]])
+    end
+    return self.get_filename(project_path, self.os.path_separator), project_path
+  end
+
+  local jj_project_path_cmd_base = "jj workspace root"
+  local jj_project_path_cmd
   if self.os.name == "windows" then
-    project_path = project_path:gsub("/", [[\]])
+    jj_project_path_cmd = string.format([[cmd /c "cd "%s" && %s"]], file_path, jj_project_path_cmd_base)
+  else
+    jj_project_path_cmd = string.format([[bash -c 'cd "%s" && %s']], file_path, jj_project_path_cmd_base)
   end
 
-  return self.get_filename(project_path, self.os.path_separator), project_path
+  project_path = vim.fn.system(jj_project_path_cmd)
+  project_path = vim.trim(project_path)
+
+  local is_jj_repo = false
+  if project_path:find("error.*") then
+    self.log:info("Not a jj repository.")
+  elseif vim.v.shell_error ~= 0 or #project_path == 0 then
+    local message_fmt = "Failed to get JJ project name (error code %d): %s"
+    self.log:debug(string.format(message_fmt, vim.v.shell_error, project_path))
+  else
+    is_jj_repo = true
+  end
+
+  if is_jj_repo then
+    if self.os.name == "windows" then
+      project_path = project_path:gsub("/", [[\]])
+    end
+    return self.get_filename(project_path, self.os.path_separator), project_path
+  end
+
+  self.log:info("Not a Git or JJ repository.")
+  return nil
 end
 
 -- Get the name of the parent directory for the given path
