@@ -39,11 +39,11 @@ function utils.get_filetype()
 end
 
 function utils.get_asset_url(asset_name)
-  return string.format("https://raw.githubusercontent.com/IogaMaster/neocord/main/assets/icons/%s.png", asset_name)
+  return string.format("https://raw.githubusercontent.com/RootOperator/neocord.nvim/main/assets/icons/%s.png", asset_name)
 end
 
 function utils.get_logo_url(logo_name)
-  return string.format("https://raw.githubusercontent.com/IogaMaster/neocord/main/assets/logos/%s.png", logo_name)
+  return string.format("https://raw.githubusercontent.com/RootOperator/neocord.nvim/main/assets/logos/%s.png", logo_name)
 end
 
 -- To ensure consistent option values, coalesce true and false values to 1 and 0

@@ -345,7 +345,7 @@ function neocord:get_project_name(file_path)
   -- Escape quotes in the file path for shell commands
   file_path = file_path:gsub([["]], [[\"]])
 
-  -- --- Attempt to find Git repository root ---
+  -- Attempt to find Git repository root
   local git_project_path_cmd_base = "git rev-parse --show-toplevel"
   local git_project_path_cmd
   if self.os.name == "windows" then
@@ -375,7 +375,7 @@ function neocord:get_project_name(file_path)
     return self.get_filename(project_path, self.os.path_separator), project_path
   end
 
-  -- --- If not a Git repository, attempt to find JJ repository root ---
+  -- If not a Git repository, attempt to find JJ repository root
   local jj_project_path_cmd_base = "jj workspace root"
   local jj_project_path_cmd
   if self.os.name == "windows" then
